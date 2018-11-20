@@ -1,0 +1,10 @@
+name = "FixedPoint"
+uuid = "60e5c88a-ec12-11e8-25e5-15d0c08d5cd5"
+authors = ["Erik Schnetter <schnetter@gmail.com>"]
+version = "0.1.0"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
