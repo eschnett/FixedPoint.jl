@@ -8,5 +8,5 @@ and I hope to eventually contribute all worthwhile changes to
 `FixedPointNumbers`.
 
 [![Build Status (Travis)](https://travis-ci.org/eschnett/FixedPoint.jl.svg?branch=master)](https://travis-ci.org/eschnett/FixedPoint.jl)
-[![Build status (Appveyor)](https://ci.appveyor.com/api/projects/status/m1rl6v9dgngsbeee?svg=true)](https://ci.appveyor.com/project/eschnett/fixedpoint-jl/branch/master)
+[![Build status (Appveyor)](https://ci.appveyor.com/api/projects/status/aancab20uolykwwu/branch/master?svg=true)](https://ci.appveyor.com/project/eschnett/fixedpoint-jl/branch/master)
 [![Coverage Status (Coveralls)](https://coveralls.io/repos/github/eschnett/FixedPoint.jl/badge.svg?branch=master)](https://coveralls.io/github/eschnett/FixedPoint.jl?branch=master)
