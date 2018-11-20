@@ -44,8 +44,6 @@ function Fixed{f, T}(x::Fixed{f, U}) where {f, T <: Signed, U <: Signed}
     # overflow. Luckily, Julia does this automatically, so we don't
     # need to handle this.
     Fixed{f, T}(Internal(), T(x.m))
-    # @assert x.m % T % U == x.m
-    # Fixed{f, T}(Internal(), x.m % T)
 end
 
 # Convert between different numbers of fraction bits (with same
@@ -219,17 +217,7 @@ function Base.hash(x::Fixed{f, T}, h::UInt)::UInt where {f, T}
 end
 
 function Base.inv(x::Fixed{f, T})::Fixed{f, T} where {f, T}
-    # This is not very accurate
-    # one(x) / x
-    T1 = widen(T)
-    f1 = 8 * sizeof(T1) - 2
-    o = T1(1) << Unsigned(f1)
-    # TODO: (see also Base./ below)
-    # - round correctly
-    # Use modulus for this?
-    # d, m = fldmod(o, x.m)
-    d = fld(o, x.m)
-    Fixed{f, T}(Fixed{typeof(f)(f1 - f)}(Internal(), d))
+    one(x) / x
 end
 
 function Base.sign(x::Fixed{f, T})::Fixed{f, T} where {f, T}
@@ -291,45 +279,32 @@ function Base.widemul(x::Fixed{f, T}, y::Fixed{f, T}) where {f, T}
     Fixed{typeof(f)(2*f)}(Internal(), widemul(x.m, y.m))
 end
 
+function Base. *(x::Fixed{f, T}, a::T)::Fixed{f, T} where {f, T}
+    Fixed{f, T}(Internal(), x.m * a)
+end
+function Base. *(a, x::Fixed{f, T})::Fixed{f, T} where {f, T}
+    Fixed{f, T}(Internal(), a * x.m)
+end
 function Base. *(x::Fixed{f, T}, y::Fixed{f, T})::Fixed{f, T} where {f, T}
     Fixed{f, T}(widemul(x, y))
 end
 
+function Base. /(x::Fixed{f, T}, a::T)::Fixed{f, T} where {f, T}
+    Fixed{f, T}(Internal(), rdd(x.m, a))
+end
 function Base. /(x::Fixed{f, T}, y::Fixed{f, T})::Fixed{f, T} where {f, T}
     # x1 = widenPrecision(x)
     x1 = widen(x)
     f1 = precision(x1)
     @assert f1 - f >= f
-    # TODO: (see also Base.inv above)
-    # - prevent overflow while adding
-    # - break ties correctly when rounding
-    # Use modulus for this?
-    d, m = fldmod(x1.m, y.m)
-    d0 = d
-    if y.m >= 0
-        if m << 1 > y.m
-            # Round up
-            d += T(1)
-        elseif m << 1 == y.m
-            # Round up if the result is odd
-            d += d & T(1)
-        end
-    else
-        if m << 1 < y.m
-            # Round up
-            d += T(1)
-        elseif m << 1 == y.m
-            # Round up if the result is odd
-            if d & T(1) != 0
-                d += T(1)
-            end
-        end
-    end
     # Avoid double rounding
     @assert f1 - f == f
-    Fixed{f, T}(Fixed{typeof(f)(f1 - f)}(Internal(), d))
+    Fixed{f, T}(Fixed{typeof(f)(f1 - f)}(Internal(), rdd(x1.m, y.m)))
 end
 
+function Base. \(a::T, x::Fixed{f, T})::Fixed{f, T} where {f, T}
+    a / x
+end
 function Base. \(x::Fixed{f, T}, y::Fixed{f, T})::Fixed{f, T} where {f, T}
     y / x
 end
@@ -368,6 +343,10 @@ end
 
 function Base.copysign(x::Fixed{f, T}, y::Fixed{f, T})::Fixed{f, T} where {f, T}
     Fixed{f, T}(Internal(), copysign(x.m, y.m))
+end
+
+function Base.flipsign(x::Fixed{f, T}, y::Fixed{f, T})::Fixed{f, T} where {f, T}
+    Fixed{f, T}(Internal(), flipsign(x.m, y.m))
 end
 
 function Base.max(x::Fixed{f, T}, y::Fixed{f, T})::Fixed{f, T} where {f, T}
@@ -415,6 +394,26 @@ function Base.sqrt(x::Fixed{f, T})::Fixed{f, T} where {f, T}
         b *= 2                  # Each iteration doubles the accurate bits
     end
     r
+end
+
+
+
+# Helper functions
+
+# Correctly rounded division (breaking ties towards even)
+export rdd
+function rdd(x::T, y::Signed)::T where {T <: Signed}
+    d, m = fldmod(x, y)::Tuple{T, T}
+    a2m = abs(m << 1)
+    ay = abs(y)
+    if a2m > ay
+        # Round up
+        d += T(1)
+    elseif a2m == ay
+        # Break tie towards even (round up if the result is odd)
+        d += d & T(1)
+    end
+    d
 end
 
 end
