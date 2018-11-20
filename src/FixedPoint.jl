@@ -44,6 +44,8 @@ function Fixed{f, T}(x::Fixed{f, U}) where {f, T <: Signed, U <: Signed}
     # overflow. Luckily, Julia does this automatically, so we don't
     # need to handle this.
     Fixed{f, T}(Internal(), T(x.m))
+    # @assert x.m % T % U == x.m
+    # Fixed{f, T}(Internal(), x.m % T)
 end
 
 # Convert between different numbers of fraction bits (with same
@@ -138,7 +140,9 @@ end
 
 function (::Type{F})(x::Fixed{f, T})::F where
         {f, T <: Signed, F <: AbstractFloat}
-    ldexp(F(x.m), -Signed(f))
+    # ldexp for generic arguments produces very complicated code
+    # ldexp(F(x.m), -Signed(f))
+    F(x.m) * ldexp(F(1), -Signed(f))
 end
 
 
